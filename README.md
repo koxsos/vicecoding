@@ -24,3 +24,24 @@ z proměnné prostředí; nevkládejte jej do zdrojového kódu ani do Git repoz
 
 Kalkulačka přijímá číselné výrazy s operátory `+`, `-`, `*`, `/`, `//`, `%`
 a `**`. Výrazy vyhodnocuje omezeným AST parserem bez použití `eval`.
+
+## Testy bez API klíče
+
+Po instalaci závislostí spusťte offline testy:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+Testy ověřují kalkulačku i simulovaný cyklus volání nástroje; nepotřebují API
+klíč ani neposílají síťové požadavky.
+
+## Test se skutečným API
+
+Nastavte `OPENAI_API_KEY` podle výše uvedeného návodu a spusťte například:
+
+```bash
+python pythonLLMscript.py "What is 25 * (10 + 2)?"
+```
+
+Tento příkaz odešle požadavek do OpenAI API a může spotřebovat kredity.
