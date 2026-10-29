@@ -1,47 +1,87 @@
-# Python skript pro LLM API
+# Python script for an LLM API
 
-Ukázka volá OpenAI API, které může podle potřeby spustit lokální nástroj
-`calculator`. Výsledek nástroje se vrátí modelu, který následně vytvoří odpověď.
+This example calls an LLM through OpenRouter's OpenAI-compatible API. The
+model can call a local `calculator` tool; its result is sent back to the model
+to produce the final answer.
 
-## Spuštění
+## Setup
 
-Vyžaduje Python 3.9+ a API klíč OpenAI:
+Requires Python 3.9+ and an OpenRouter API key.
 
 ```bash
 python -m pip install -r requirements.txt
-export OPENAI_API_KEY="váš-api-klíč"
+export OPENROUTER_API_KEY="your-openrouter-api-key"
 python pythonLLMscript.py
 ```
 
-Vlastní dotaz zadejte jako argument:
+In PowerShell, set the key for the current terminal session with:
 
-```bash
-python pythonLLMscript.py "Kolik je 144 děleno 12?"
+```powershell
+$env:OPENROUTER_API_KEY = "your-openrouter-api-key"
+python pythonLLMscript.py
 ```
 
-Případně lze změnit model přepínačem `--model`. Skript klíč načítá pouze
-z proměnné prostředí; nevkládejte jej do zdrojového kódu ani do Git repozitáře.
+Never paste your key into source code, commit it, or share it in chat.
 
-Kalkulačka přijímá číselné výrazy s operátory `+`, `-`, `*`, `/`, `//`, `%`
-a `**`. Výrazy vyhodnocuje omezeným AST parserem bez použití `eval`.
+The default model is OpenRouter's free
+`google/gemma-4-31b-it:free`. You can choose another model available on
+OpenRouter with `--model`:
 
-## Testy bez API klíče
+```bash
+python pythonLLMscript.py --model "google/gemma-4-31b-it:free" "What is 25 * (10 + 2)?"
+```
 
-Po instalaci závislostí spusťte offline testy:
+Alternatively, set `OPENROUTER_MODEL` to use a different model by default.
+
+The calculator supports numeric expressions using `+`, `-`, `*`, `/`, `//`,
+`%`, and `**`. It uses a restricted AST parser rather than `eval`.
+
+## Offline tests (no API key or credits)
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-Testy ověřují kalkulačku i simulovaný cyklus volání nástroje; nepotřebují API
-klíč ani neposílají síťové požadavky.
+These tests check calculator behavior, the mocked tool-call round trip, and
+OpenRouter client configuration. They do not make network requests.
 
-## Test se skutečným API
+## Live API test
 
-Nastavte `OPENAI_API_KEY` podle výše uvedeného návodu a spusťte například:
+After setting `OPENROUTER_API_KEY`, run:
 
 ```bash
 python pythonLLMscript.py "What is 25 * (10 + 2)?"
 ```
 
-Tento příkaz odešle požadavek do OpenAI API a může spotřebovat kredity.
+This sends a request to OpenRouter. Free models can have rate limits or
+temporary availability constraints.
+The selected model must be available to your OpenRouter account and support
+tool/function calling.
+
+If OpenRouter returns `429` (`RateLimitError`), the selected free provider may
+be busy or your account may have reached a rate limit. Wait and retry, or try
+another free model that supports tool calling:
+
+```bash
+python pythonLLMscript.py --model "another/provider-model:free" "hello"
+```
+
+## List or test all free tool-capable models
+
+List models currently advertised by OpenRouter as free and tool-capable (this
+fetches the public model catalog but does not call any models):
+
+```bash
+python pythonLLMscript.py --list-free-models
+```
+
+To run a calculator-tool round trip against every model in that list:
+
+```bash
+python pythonLLMscript.py --test-free-models
+```
+
+This makes up to two API calls per model, sequentially, with a two-second
+pause between models. It may take a while and can hit free-tier rate limits;
+the sweep stops on the first `429`. Adjust the pause with `--delay 5`, or
+set it to `0` to omit the pause.
